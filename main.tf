@@ -1,0 +1,125 @@
+resource "aws_vpc" "fp_vpc" {
+  cidr_block = "10.0.0.0/16"
+
+  tags = {
+    Name = "finalproject_vpc"
+  }
+}
+
+resource "aws_subnet" "fp_subnet1" {
+  vpc_id     = aws_vpc.fp_vpc.id
+  cidr_block = "10.0.1.0/24"
+
+  tags = {
+    Name = "finalproject_subnet1"
+  }
+}
+
+resource "aws_internet_gateway" "fp_gateway" {
+  vpc_id = aws_vpc.fp_vpc.id
+
+  tags = {
+    Name = "finalproject_gateway"
+  }
+}
+
+resource "aws_route_table" "fp_rt" {
+  vpc_id = aws_vpc.fp_vpc.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.fp_gateway.id
+  }
+
+
+
+  tags = {
+    Name = "finalproject_rt"
+  }
+}
+
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.fp_subnet1.id
+  route_table_id = aws_route_table.fp_rt.id
+}
+## security groups for aws_resources
+resource "aws_security_group" "aws_resources_sg" {
+  name        = "aws_resources_sg"
+  description = "SG for finalproject"
+  vpc_id      = aws_vpc.fp_vpc.id
+  ingress {
+    description = "ssh to my ip"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  ingress {
+    description = "http to my ip"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  tags = {
+    Name = "aws_resources_sg"
+  }
+}
+resource "aws_key_pair" "fp_key" {
+  key_name = "mini_project_key_tf"
+  public_key ="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCPLQaupjQH8kWPBDtdmbtMYJiLNRh/aGCFpjnyaUF6jOvgst9AV6q6+ZEy9Tu0ERIQKR3pSdB7Ak1x1tb/zd83l8fB/PTpGaRWzTIqJbYjvVNzUFPCW/6hh5siuk5lt5GpKQ70ZItVsbt5qd/idZ7UXx7CWM2kGe978GFJcTU66J8NEttJbUXkW/wCyHDZfYHKynPO0A0xzO3la6WBR4U0/YTz6/Q0SGVmse63TyvOEqG8N3Sc9yRsnj8KoSu6iYLiPuCvQTtSbNNwjU5Akzpoor6i48Lo7jwQp0deSDmKSsutj1q8ORlL7JUMHyZdEhX1y4ntbbozHkDr9KWYtfn9"
+}
+resource "aws_instance" "ansible_ec2" {
+  ami           = "ami-07e025ee9a1c5511c"
+  instance_type = "t2.micro"
+  key_name = aws_key_pair.fp_key.id
+  subnet_id = aws_subnet.fp_subnet1.id
+  vpc_security_group_ids = [aws_security_group.aws_resources_sg.id]
+  associate_public_ip_address = true
+  
+  tags = {
+    Name = "ansible_ec2"
+  }
+ }
+ resource "aws_instance" "jenkins_ec2" {
+  ami           = "ami-07e025ee9a1c5511c"
+  instance_type = "t2.micro"
+  key_name = aws_key_pair.fp_key.id
+  subnet_id = aws_subnet.fp_subnet1.id
+  vpc_security_group_ids = [aws_security_group.aws_resources_sg.id]
+  associate_public_ip_address = true
+  
+  tags = {
+    Name = "jenkins_ec2"
+  }
+ }
+ resource "aws_instance" "kubernetes_ec2" {
+  ami           = "ami-07e025ee9a1c5511c"
+  instance_type = "t2.micro"
+  key_name = aws_key_pair.fp_key.id
+  subnet_id = aws_subnet.fp_subnet1.id
+  vpc_security_group_ids = [aws_security_group.aws_resources_sg.id]
+  associate_public_ip_address = true
+  
+  tags = {
+    Name = "kubernetes_ec2"
+  }
+ }
+ resource "github_repository" "fp_repo" {
+  name        = "finalproject_private_repo"
+  description = "My awesome codebase for gitrepo"
+
+  visibility = "private"
+}
